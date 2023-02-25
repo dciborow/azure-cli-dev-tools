@@ -8,6 +8,7 @@
 
 """Azure Developer Tools package that can be installed using setuptools"""
 
+
 from codecs import open
 import os
 import re
@@ -16,8 +17,11 @@ from setuptools import setup, find_packages
 
 azdev_path = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(azdev_path, 'azdev', '__init__.py'), 'r') as version_file:
-    __VERSION__ = re.search(r'^__VERSION__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                            version_file.read(), re.MULTILINE).group(1)
+    __VERSION__ = re.search(
+        r'^__VERSION__\s*=\s*[\'"]([^\'"]*)[\'"]',
+        version_file.read(),
+        re.MULTILINE,
+    )[1]
 
 with open('README.rst', 'r', encoding='utf-8') as f:
     README = f.read()

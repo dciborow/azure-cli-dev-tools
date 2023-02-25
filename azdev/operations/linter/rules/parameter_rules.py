@@ -24,9 +24,10 @@ def expired_parameter(linter, command_name, parameter_name):
 
 @ParameterRule(LinterSeverity.HIGH)
 def expired_option(linter, command_name, parameter_name):
-    expired_options = linter.option_expired(command_name, parameter_name)
-    if expired_options:
-        raise RuleError("Deprecated options '{}' are expired and should be removed.".format(', '.join(expired_options)))
+    if expired_options := linter.option_expired(command_name, parameter_name):
+        raise RuleError(
+            f"Deprecated options '{', '.join(expired_options)}' are expired and should be removed."
+        )
 
 
 @ParameterRule(LinterSeverity.HIGH)
@@ -41,8 +42,9 @@ def bad_short_option(linter, command_name, parameter_name):
             bad_options.append(option)
 
     if bad_options:
-        raise RuleError('Found multi-character short options: {}. Use a single character or '
-                        'convert to a long-option.'.format(' | '.join(bad_options)))
+        raise RuleError(
+            f"Found multi-character short options: {' | '.join(bad_options)}. Use a single character or convert to a long-option."
+        )
 
 
 @ParameterRule(LinterSeverity.MEDIUM)
@@ -62,9 +64,9 @@ def parameter_should_not_end_in_resource_group(linter, command_name, parameter_n
 
     if bad_options:
         bad_options_str = ' | '.join(bad_options)
-        raise RuleError("A command should only have '--resource-group' as its resource group parameter. "
-                        "However options '{}' in command '{}' end with 'resource-group' or similar."
-                        .format(bad_options_str, command_name))
+        raise RuleError(
+            f"A command should only have '--resource-group' as its resource group parameter. However options '{bad_options_str}' in command '{command_name}' end with 'resource-group' or similar."
+        )
 
 
 @ParameterRule(LinterSeverity.HIGH)
@@ -72,9 +74,9 @@ def no_positional_parameters(linter, command_name, parameter_name):
     options_list = linter.get_parameter_options(command_name, parameter_name)
 
     if not options_list:
-        raise RuleError("CLI commands should have optional parameters instead of positional parameters. "
-                        "However parameter '{}' in command '{}' is a positional."
-                        .format(parameter_name, command_name))
+        raise RuleError(
+            f"CLI commands should have optional parameters instead of positional parameters. However parameter '{parameter_name}' in command '{command_name}' is a positional."
+        )
 
 
 @ParameterRule(LinterSeverity.HIGH)
@@ -83,8 +85,9 @@ def no_parameter_defaults_for_update_commands(linter, command_name, parameter_na
     default_val = linter.get_parameter_settings(command_name, parameter_name).get('default')
 
     if is_update_command and default_val:
-        raise RuleError("Update commands should not have parameters with default values. '{}' in '{}' has a "
-                        "default value of '{}'".format(parameter_name, command_name, default_val))
+        raise RuleError(
+            f"Update commands should not have parameters with default values. '{parameter_name}' in '{command_name}' has a default value of '{default_val}'"
+        )
 
 
 @ParameterRule(LinterSeverity.MEDIUM)
@@ -97,15 +100,13 @@ def no_required_location_param(linter, command_name, parameter_name):
 
     if has_resource_group and is_location_param:
         parameter = linter.get_parameter_settings(command_name, parameter_name)
-        is_required = parameter.get('required')
-
-        if is_required:
+        if is_required := parameter.get('required'):
             location_params = linter.get_parameter_options(command_name, parameter_name)
-            location_params = location_params or "'{}'".format(parameter_name)
+            location_params = location_params or f"'{parameter_name}'"
 
-            raise RuleError("Location parameters should not be required. However, {} in '{}' should is required. "
-                            "Please make it optional and default to the location of the resource group."
-                            .format(location_params, command_name))
+            raise RuleError(
+                f"Location parameters should not be required. However, {location_params} in '{command_name}' should is required. Please make it optional and default to the location of the resource group."
+            )
 
 
 @ParameterRule(LinterSeverity.LOW)
@@ -156,10 +157,9 @@ def option_length_too_long(linter, command_name, parameter_name):
             option_len -= 1
         min_length = min(min_length, option_len) if min_length else option_len
     if min_length and min_length > length_threshold:
-        raise RuleError("The lengths of all options {} are longer than threshold {}. "
-                        "Argument {} must have a short abbreviation.".format(options_list,
-                                                                             length_threshold,
-                                                                             parameter_name))
+        raise RuleError(
+            f"The lengths of all options {options_list} are longer than threshold {length_threshold}. Argument {parameter_name} must have a short abbreviation."
+        )
 
 
 @ParameterRule(LinterSeverity.HIGH)
@@ -169,4 +169,6 @@ def option_should_not_contain_under_score(linter, command_name, parameter_name):
         if isinstance(option, Deprecated) or option.startswith('--__'):
             return
         if '_' in option:
-            raise RuleError("Argument's option {} contains '_' which should be '-' instead.".format(option))
+            raise RuleError(
+                f"Argument's option {option} contains '_' which should be '-' instead."
+            )

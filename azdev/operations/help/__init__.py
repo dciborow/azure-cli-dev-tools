@@ -43,18 +43,26 @@ def check_document_map():
     help_files_to_add_to_map = _help_files_not_in_map(cli_repo, help_files_in_map)
 
     subheading('Results')
-    if help_files_not_found or help_files_to_add_to_map:
-        error_lines = []
-        error_lines.append('Errors whilst verifying {}!'.format(DOC_MAP_NAME))
-        if help_files_not_found:
-            error_lines.append('The following files are in {} but do not exist:'.format(DOC_MAP_NAME))
-            error_lines += help_files_not_found
+    if help_files_not_found:
+        error_lines = [
+            f'Errors whilst verifying {DOC_MAP_NAME}!',
+            f'The following files are in {DOC_MAP_NAME} but do not exist:',
+        ]
+        error_lines += help_files_not_found
         if help_files_to_add_to_map:
-            error_lines.append('The following files should be added to {}:'.format(DOC_MAP_NAME))
+            error_lines.append(f'The following files should be added to {DOC_MAP_NAME}:')
             error_lines += help_files_to_add_to_map
         error_msg = '\n'.join(error_lines)
         raise CLIError(error_msg)
-    display('Verified {} OK.'.format(DOC_MAP_NAME))
+    elif help_files_to_add_to_map:
+        error_lines = [
+            f'Errors whilst verifying {DOC_MAP_NAME}!',
+            f'The following files should be added to {DOC_MAP_NAME}:',
+        ]
+        error_lines += help_files_to_add_to_map
+        error_msg = '\n'.join(error_lines)
+        raise CLIError(error_msg)
+    display(f'Verified {DOC_MAP_NAME} OK.')
 
 
 def _get_help_files_in_map(map_path):
@@ -64,11 +72,11 @@ def _get_help_files_in_map(map_path):
 
 
 def _map_help_files_not_found(cli_repo, help_files_in_map):
-    missing_files = []
-    for path in help_files_in_map:
-        if not os.path.isfile(os.path.normpath(os.path.join(cli_repo, path))):
-            missing_files.append(path)
-    return missing_files
+    return [
+        path
+        for path in help_files_in_map
+        if not os.path.isfile(os.path.normpath(os.path.join(cli_repo, path)))
+    ]
 
 
 def _help_files_not_in_map(cli_repo, help_files_in_map):
@@ -90,7 +98,7 @@ def generate_cli_ref_docs(output_dir=None, output_type=None, all_profiles=None):
     _warn_if_exts_installed()
 
     heading('Generate CLI Reference Docs')
-    display("Docs will be placed in {}.".format(output_dir))
+    display(f"Docs will be placed in {output_dir}.")
 
     if all_profiles:
         # Generate documentation for all commands and for all CLI profiles
@@ -99,7 +107,7 @@ def generate_cli_ref_docs(output_dir=None, output_type=None, all_profiles=None):
         # Generate documentation for all comamnds
         _call_sphinx_build(output_type, output_dir)
 
-    display("\nThe {} files are in {}".format(output_type, output_dir))
+    display(f"\nThe {output_type} files are in {output_dir}")
 
 
 def generate_extension_ref_docs(output_dir=None, output_type=None):
@@ -108,12 +116,12 @@ def generate_extension_ref_docs(output_dir=None, output_type=None):
     output_dir = _process_ref_doc_output_dir(output_dir)
 
     heading('Generate CLI Extensions Reference Docs')
-    display("Docs will be placed in {}.".format(output_dir))
+    display(f"Docs will be placed in {output_dir}.")
 
     display("Generating Docs for public extensions. Installed extensions will not be affected...")
     _generate_ref_docs_for_public_exts(output_type, output_dir)
 
-    display("\nThe {} files are in {}".format(output_type, output_dir))
+    display(f"\nThe {output_type} files are in {output_dir}")
 
 
 def _process_ref_doc_output_dir(output_dir):
@@ -128,8 +136,9 @@ def _process_ref_doc_output_dir(output_dir):
         existing_path = os.path.dirname(output_dir)
         base_dir = os.path.basename(output_dir)
         if not os.path.exists(existing_path):
-            raise CLIError("Cannot create output directory {} in non-existent path {}."
-                           .format(base_dir, existing_path))
+            raise CLIError(
+                f"Cannot create output directory {base_dir} in non-existent path {existing_path}."
+            )
 
         os.mkdir(output_dir)
     return output_dir
@@ -150,7 +159,9 @@ def _generate_ref_docs_for_all_profiles(output_type, base_output_dir):
             _set_profile(profile)
             _call_sphinx_build(output_type, profile_output_dir)
 
-            display("\nFinished generating files for profile {} in dir {}\n".format(output_type, profile_output_dir))
+            display(
+                f"\nFinished generating files for profile {output_type} in dir {profile_output_dir}\n"
+            )
 
         # always set the profile back to the original profile after generating all docs.
         _set_profile(original_profile)
@@ -188,7 +199,7 @@ def _generate_ref_docs_for_public_exts(output_type, base_output_dir):
             pip_cmd = [sys.executable, '-m', 'pip', 'install', '--target',
                        os.path.join(installed_ext_dir, 'extension'),
                        whl_file_name, '--disable-pip-version-check', '--no-cache-dir']
-            display('Executing "{}"'.format(' '.join(pip_cmd)))
+            display(f"""Executing "{' '.join(pip_cmd)}\"""")
             check_call(pip_cmd)
 
             # set the directory as the extension directory in the environment used to call sphinx-build
@@ -198,8 +209,13 @@ def _generate_ref_docs_for_public_exts(output_type, base_output_dir):
 
             ext_output_dir = os.path.join(base_output_dir, name)
             os.makedirs(ext_output_dir)
-            _call_sphinx_build(output_type, ext_output_dir, for_extensions_alone=True, call_env=env,
-                               msg="\nGenerating ref docs for {}".format(name))
+            _call_sphinx_build(
+                output_type,
+                ext_output_dir,
+                for_extensions_alone=True,
+                call_env=env,
+                msg=f"\nGenerating ref docs for {name}",
+            )
     finally:
         # finally delete the temp dir
         shutil.rmtree(temp_dir)
@@ -223,7 +239,7 @@ def _call_sphinx_build(builder_name, output_dir, for_extensions_alone=False, cal
             opts.extend(["-D", "smartquotes=0"])
 
         sphinx_cmd = ['sphinx-build'] + opts + args
-        display("sphinx cmd: {}".format(" ".join(sphinx_cmd)))
+        display(f'sphinx cmd: {" ".join(sphinx_cmd)}')
         display(msg)
         # call sphinx-build
         check_call(sphinx_cmd, stdout=sys.stdout, stderr=sys.stderr, env=call_env)
@@ -236,7 +252,7 @@ def _get_current_profile():
     try:
         return check_output(['az', 'cloud', 'show', '--query', '"profile"', '-otsv']).decode('utf-8').strip()
     except CalledProcessError as e:
-        raise CLIError("Failed to get current profile due to err: {}".format(e))
+        raise CLIError(f"Failed to get current profile due to err: {e}")
 
 
 def _set_profile(profile):
@@ -244,15 +260,16 @@ def _set_profile(profile):
         _logger.warning("Setting the CLI profile to '%s'", profile)
         check_call(['az', 'cloud', 'update', '--profile', profile])
     except CalledProcessError as e:
-        raise CLIError("Failed to set profile {} due to err:\n{}\n"
-                       "Please check that your profile is set to the expected value.".format(profile, e))
+        raise CLIError(
+            f"Failed to set profile {profile} due to err:\n{e}\nPlease check that your profile is set to the expected value."
+        )
 
 
 def _get_profiles():
     try:
         profiles_str = check_output(["az", "cloud", "list-profiles", "-o", "tsv"]).decode('utf-8').strip()
     except CalledProcessError as e:
-        raise CLIError("Failed to get profiles due to err: {}".format(e))
+        raise CLIError(f"Failed to get profiles due to err: {e}")
 
     return profiles_str.splitlines()
 
@@ -301,7 +318,7 @@ def _get_whl_from_url(url, filename, tmp_dir, whl_cache=None):
         return whl_cache[url]
     import requests
     r = requests.get(url, stream=True)
-    assert r.status_code == 200, "Request to {} failed with {}".format(url, r.status_code)
+    assert r.status_code == 200, f"Request to {url} failed with {r.status_code}"
     ext_file = os.path.join(tmp_dir, filename)
     with open(ext_file, 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):

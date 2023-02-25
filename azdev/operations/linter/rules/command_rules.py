@@ -31,7 +31,10 @@ def group_delete_commands_should_confirm(linter, command_name):
     # We cannot detect from cmd table etc whether a delete command deletes a collection, group or set of resources.
     # so warn users for every delete command.
 
-    if command_name.split()[-1].lower() == "delete":
-        if 'yes' not in linter.get_command_parameters(command_name):
-            raise RuleError("If this command deletes a collection, or group of resources. "
-                            "Please make sure to ask for confirmation.")
+    if command_name.split()[
+        -1
+    ].lower() == "delete" and 'yes' not in linter.get_command_parameters(
+        command_name
+    ):
+        raise RuleError("If this command deletes a collection, or group of resources. "
+                        "Please make sure to ask for confirmation.")

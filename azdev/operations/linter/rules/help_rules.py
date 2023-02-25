@@ -48,24 +48,28 @@ def unrecognized_help_parameter_rule(linter, help_entry):
         return
 
     param_help_names = linter.get_help_entry_parameter_names(help_entry)
-    violations = []
-    for param_help_name in param_help_names:
-        if not linter.is_valid_parameter_help_name(help_entry, param_help_name):
-            violations.append(param_help_name)
-    if violations:
-        raise RuleError('The following parameter help names are invalid: {}'.format(' | '.join(violations)))
+    if violations := [
+        param_help_name
+        for param_help_name in param_help_names
+        if not linter.is_valid_parameter_help_name(help_entry, param_help_name)
+    ]:
+        raise RuleError(
+            f"The following parameter help names are invalid: {' | '.join(violations)}"
+        )
 
 
 @HelpFileEntryRule(LinterSeverity.HIGH)
 def faulty_help_example_rule(linter, help_entry):
-    violations = []
-    for index, example in enumerate(linter.get_help_entry_examples(help_entry)):
-        if 'az ' + help_entry not in example.get('text', ''):
-            violations.append(str(index))
-
-    if violations:
-        raise RuleError('The following example entry indices do not include the command: {}'.format(
-            ' | '.join(violations)))
+    if violations := [
+        str(index)
+        for index, example in enumerate(
+            linter.get_help_entry_examples(help_entry)
+        )
+        if f'az {help_entry}' not in example.get('text', '')
+    ]:
+        raise RuleError(
+            f"The following example entry indices do not include the command: {' | '.join(violations)}"
+        )
 
 
 @HelpFileEntryRule(LinterSeverity.HIGH)
@@ -99,8 +103,11 @@ def faulty_help_example_parameters_rule(linter, help_entry):
     if violations:
         num_err = len(violations)
         violation_str = "\n\n".join(violations)
-        violation_msg = "\n\tThere is a violation:\n{}.".format(violation_str) if num_err == 1 else \
-            "\n\tThere are {} violations:\n{}".format(num_err, violation_str)
+        violation_msg = (
+            f"\n\tThere is a violation:\n{violation_str}."
+            if num_err == 1
+            else f"\n\tThere are {num_err} violations:\n{violation_str}"
+        )
         raise RuleError(violation_msg + "\n\n")
 
 
@@ -155,7 +162,7 @@ def _extract_commands_from_example(example_text):
                 quote = None
         if quote is None and line.endswith("\\"):
             # attach this line with removed '\' and no '\n' (space at the end to keep consistent with initial algorithm)
-            example_text += line[0:-1] + " "
+            example_text += f"{line[:-1]} "
         elif quote is not None:
             # attach this line without '\n'
             example_text += line
@@ -174,12 +181,9 @@ def _extract_commands_from_example(example_text):
 
         for re_prog in [_CMD_SUB_1, _CMD_SUB_2]:
             start = 0
-            match = re_prog.search(command, start)
-            while match:  # while there is a nested az command of type 1 $( az ...)
+            while match := re_prog.search(command, start):
                 processed_commands.append(match.group(1).strip())  # add it
                 start = match.end(1)  # get index of rest of string
-                match = re_prog.search(command, start)  # attempt to get next match
-
     return processed_commands
 
 

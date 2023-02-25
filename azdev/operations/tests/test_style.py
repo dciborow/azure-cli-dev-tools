@@ -38,7 +38,7 @@ class TestConfigFilePath(unittest.TestCase):
 
         with mock.patch("azdev.operations.style.get_azdev_config", return_value=mocked_config):
             r = _config_file_path(style_type="pylint")
-            self.assertEqual(r[0], cli_repo_path + "/pylintrc")
+            self.assertEqual(r[0], f"{cli_repo_path}/pylintrc")
             self.assertTrue(r[1].endswith("/config_files/ext_pylintrc"))
 
     def test_pylint_config_with_all_setup(self):
@@ -52,7 +52,7 @@ class TestConfigFilePath(unittest.TestCase):
 
         with mock.patch("azdev.operations.style.get_azdev_config", return_value=mocked_config):
             r = _config_file_path()
-            self.assertEqual(r[0], cli_repo_path + "/pylintrc")
+            self.assertEqual(r[0], f"{cli_repo_path}/pylintrc")
             self.assertTrue(r[1], "/pylintrc")
 
     def test_flake8_config_wihtout_setup(self):
@@ -79,7 +79,7 @@ class TestConfigFilePath(unittest.TestCase):
         with mock.patch("azdev.operations.style.get_azdev_config", return_value=mocked_config):
             r = _config_file_path(style_type="flake8")
             self.assertTrue(r[0].endswith("/config_files/cli.flake8"))
-            self.assertTrue(r[1].endswith(ext_repo_path + "/.flake8"))
+            self.assertTrue(r[1].endswith(f"{ext_repo_path}/.flake8"))
 
     def test_flake9_config_with_all_setup(self):
         cli_repo_path = "~/Azure/azure-cli"
@@ -93,5 +93,5 @@ class TestConfigFilePath(unittest.TestCase):
 
         with mock.patch("azdev.operations.style.get_azdev_config", return_value=mocked_config):
             r = _config_file_path(style_type="flake8")
-            self.assertTrue(r[0].endswith(cli_repo_path + "/.flake8"))
-            self.assertTrue(r[1].endswith(ext_repo_path + "/.flake8"))
+            self.assertTrue(r[0].endswith(f"{cli_repo_path}/.flake8"))
+            self.assertTrue(r[1].endswith(f"{ext_repo_path}/.flake8"))

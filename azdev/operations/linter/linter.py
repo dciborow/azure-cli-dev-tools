@@ -47,9 +47,7 @@ class Linter:  # pylint: disable=too-many-public-methods
         self._command_parser = command_loader.cli_ctx.invocation.parser
         self._command_groups = []
         for command_name, command in self._command_loader.command_table.items():
-            self._parameters[command_name] = set()
-            for name in command.arguments:
-                self._parameters[command_name].add(name)
+            self._parameters[command_name] = set(command.arguments)
 
     @property
     def commands(self):
@@ -62,7 +60,7 @@ class Linter:  # pylint: disable=too-many-public-methods
             for command_group in self._command_loader.command_group_table.keys():
                 prefix_name = ""
                 for word in command_group.split():
-                    prefix_name = "{} {}".format(prefix_name, word).strip()
+                    prefix_name = f"{prefix_name} {word}".strip()
                     if prefix_name in added_command_groups:
                         # if the parent command group is added continue
                         continue
@@ -138,16 +136,16 @@ class Linter:  # pylint: disable=too-many-public-methods
         return self.get_command_metadata(command_name).arguments.get(parameter_name).type.settings
 
     def command_expired(self, command_name):
-        deprecate_info = self._command_loader.command_table[command_name].deprecate_info
-        if deprecate_info:
+        if deprecate_info := self._command_loader.command_table[
+            command_name
+        ].deprecate_info:
             return deprecate_info.expired()
         return False
 
     def command_group_expired(self, command_group_name):
         try:
             group_kwargs = self._command_loader.command_group_table[command_group_name].group_kwargs
-            deprecate_info = group_kwargs.get('deprecate_info', None)
-            if deprecate_info:
+            if deprecate_info := group_kwargs.get('deprecate_info', None):
                 return deprecate_info.expired()
         except KeyError:
             # ignore command_group_name which is not in command_group_table.
@@ -159,8 +157,7 @@ class Linter:  # pylint: disable=too-many-public-methods
 
     def parameter_expired(self, command_name, parameter_name):
         parameter = self._command_loader.command_table[command_name].arguments[parameter_name].type.settings
-        deprecate_info = parameter.get('deprecate_info', None)
-        if deprecate_info:
+        if deprecate_info := parameter.get('deprecate_info', None):
             return deprecate_info.expired()
         return False
 
@@ -168,17 +165,17 @@ class Linter:  # pylint: disable=too-many-public-methods
         from knack.deprecation import Deprecated
         parameter = self._command_loader.command_table[command_name].arguments[parameter_name].type.settings
         options_list = parameter.get('options_list', [])
-        expired_options_list = []
-        for opt in options_list:
-            if isinstance(opt, Deprecated) and opt.expired():
-                expired_options_list.append(opt.target)
-        return expired_options_list
+        return [
+            opt.target
+            for opt in options_list
+            if isinstance(opt, Deprecated) and opt.expired()
+        ]
 
     def _get_loaded_help_description(self, entry):
-        help_entry = self._loaded_help.get(entry, None)
-        if help_entry:
+        if help_entry := self._loaded_help.get(entry, None):
             return help_entry.short_summary or help_entry.long_summary
-        return help_entry
+        else:
+            return help_entry
 
 
 # pylint: disable=too-many-instance-attributes
@@ -235,7 +232,7 @@ class LinterManager:
         return self._exit_code
 
     def run(self, run_params=None, run_commands=None, run_command_groups=None, run_help_files_entries=None):
-        paths = import_module('{}.rules'.format(PACKAGE_NAME)).__path__
+        paths = import_module(f'{PACKAGE_NAME}.rules').__path__
 
         if paths:
             ci_exclusions_path = os.path.join(paths[0], 'ci_exclusions.yml')
@@ -245,12 +242,12 @@ class LinterManager:
         # find all defined rules and check for name conflicts
         found_rules = set()
         for _, name, _ in iter_modules(paths):
-            rule_module = import_module('{}.rules.{}'.format(PACKAGE_NAME, name))
+            rule_module = import_module(f'{PACKAGE_NAME}.rules.{name}')
             functions = inspect.getmembers(rule_module, inspect.isfunction)
             for rule_name, add_to_linter_func in functions:
                 if hasattr(add_to_linter_func, 'linter_rule'):
                     if rule_name in found_rules:
-                        raise LinterError('Multiple rules found with the same name: %s' % rule_name)
+                        raise LinterError(f'Multiple rules found with the same name: {rule_name}')
                     found_rules.add(rule_name)
                     add_to_linter_func(self)
 
@@ -268,7 +265,7 @@ class LinterManager:
             self._run_rules('params')
 
         if not self.exit_code:
-            print(os.linesep + 'No violations found for linter rules.')
+            print(f'{os.linesep}No violations found for linter rules.')
 
         if self._update_global_exclusion is not None:
             if self._update_global_exclusion == 'CLI':
@@ -303,8 +300,7 @@ class LinterManager:
             with LinterScope(self, linter_callable):
                 # if the rule's severity is lower than the linter's severity skip it.
                 if self._linter_severity_is_applicable(rule_severity, rule_name):
-                    violations = sorted(rule_func()) or []
-                    if violations:
+                    if violations := sorted(rule_func()) or []:
                         if rule_severity == LinterSeverity.HIGH:
                             sev_color = RED
                         elif rule_severity == LinterSeverity.MEDIUM:
@@ -313,14 +309,15 @@ class LinterManager:
                             sev_color = CYAN
 
                         # pylint: disable=duplicate-string-formatting-argument
-                        print('- {} FAIL{} - {}{}{} severity: {}'.format(RED, RESET, sev_color,
-                                                                         severity_str, RESET, rule_name,))
+                        print(
+                            f'- {RED} FAIL{RESET} - {sev_color}{severity_str}{RESET} severity: {rule_name}'
+                        )
                         for violation_msg, entity_name, name in violations:
                             print(violation_msg)
                             self._save_violations(entity_name, name)
                         print()
                     else:
-                        print('- {} pass{}: {} '.format(GREEN, RESET, rule_name))
+                        print(f'- {GREEN} pass{RESET}: {rule_name} ')
 
     def _linter_severity_is_applicable(self, rule_severity, rule_name):
         if self.min_severity.value > rule_severity.value:

@@ -39,4 +39,6 @@ def require_wait_command_if_no_wait(linter, command_group_name):
     # otherwise there is no wait command. If a command in this group has --no-wait, then error out.
     for cmd in group_command_names:
         if linter.get_command_metadata(cmd).supports_no_wait:
-            raise RuleError("Group does not have a 'wait' command, yet '{}' exposes '--no-wait'".format(cmd))
+            raise RuleError(
+                f"Group does not have a 'wait' command, yet '{cmd}' exposes '--no-wait'"
+            )

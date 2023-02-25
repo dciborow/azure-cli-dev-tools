@@ -116,7 +116,7 @@ def run_tests(tests, xml_path=None, discover=False, in_series=False,
                                  mark=mark)
         exit_code = runner(test_paths=test_paths, pytest_args=pytest_args)
 
-    sys.exit(0 if not exit_code else 1)
+    sys.exit(1 if exit_code else 0)
 
 
 def _filter_by_git_diff(tests, test_index, git_source, git_target, git_repo):
@@ -292,7 +292,7 @@ def _discover_tests(profile):
 
         mod_path = mod_data['filepath']
         for file_name, file_data in mod_data['files'].items():
-            file_path = os.path.join(mod_path, file_name) + '.py'
+            file_path = f'{os.path.join(mod_path, file_name)}.py'
             for class_name, test_list in file_data.items():
                 for test_name in test_list:
                     test_path = '{}::{}::{}'.format(file_path, class_name, test_name)
@@ -314,20 +314,20 @@ def _get_test_index(profile, discover):
     config_dir = get_azdev_config_dir()
     test_index_dir = os.path.join(config_dir, 'test_index')
     make_dirs(test_index_dir)
-    test_index_path = os.path.join(test_index_dir, '{}.json'.format(profile))
+    test_index_path = os.path.join(test_index_dir, f'{profile}.json')
     test_index = {}
     if discover:
         test_index = _discover_tests(profile)
         with open(test_index_path, 'w') as f:
             f.write(json.dumps(test_index))
-        display('\ntest index updated: {}'.format(test_index_path))
+        display(f'\ntest index updated: {test_index_path}')
     elif os.path.isfile(test_index_path):
         with open(test_index_path, 'r') as f:
             test_index = json.loads(''.join(f.readlines()))
-        display('\ntest index found: {}'.format(test_index_path))
+        display(f'\ntest index found: {test_index_path}')
     else:
         test_index = _discover_tests(profile)
         with open(test_index_path, 'w') as f:
             f.write(json.dumps(test_index))
-        display('\ntest index created: {}'.format(test_index_path))
+        display(f'\ntest index created: {test_index_path}')
     return test_index

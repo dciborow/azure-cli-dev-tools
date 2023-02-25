@@ -64,9 +64,9 @@ def check_style(modules=None, pylint=False, pep8=False, git_source=None, git_tar
     ext_names = list(selected_modules['ext'].keys())
 
     if mod_names:
-        display('Modules: {}\n'.format(', '.join(mod_names)))
+        display(f"Modules: {', '.join(mod_names)}\n")
     if ext_names:
-        display('Extensions: {}\n'.format(', '.join(ext_names)))
+        display(f"Extensions: {', '.join(ext_names)}\n")
 
     # if neither flag provided, same as if both were provided
     if not any([pylint, pep8]):
@@ -104,22 +104,23 @@ def _combine_command_result(cli_result, ext_result):
     final_result = CommandResultItem(None)
 
     def apply_result(item):
-        if item:
-            final_result.exit_code += item.exit_code
-            if item.error:
-                if final_result.error:
-                    try:
-                        final_result.error.message += item.error.message
-                    except AttributeError:
-                        final_result.error.message += str(item.error)
-                else:
-                    final_result.error = item.error
-                    setattr(final_result.error, 'message', '')
-            if item.result:
-                if final_result.result:
-                    final_result.result += item.result
-                else:
-                    final_result.result = item.result
+        if not item:
+            return
+        final_result.exit_code += item.exit_code
+        if item.error:
+            if final_result.error:
+                try:
+                    final_result.error.message += item.error.message
+                except AttributeError:
+                    final_result.error.message += str(item.error)
+            else:
+                final_result.error = item.error
+                setattr(final_result.error, 'message', '')
+        if item.result:
+            if final_result.result:
+                final_result.result += item.result
+            else:
+                final_result.result = item.result
 
     apply_result(cli_result)
     apply_result(ext_result)

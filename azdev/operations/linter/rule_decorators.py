@@ -12,8 +12,9 @@ class BaseRule:
 
     def __init__(self, severity):
         if severity not in LinterSeverity:
-            raise CLIError("A {} rule has an invalid severity. Received {}; expected one of: {}"
-                           .format(str(self.__class__), severity, list(LinterSeverity)))
+            raise CLIError(
+                f"A {str(self.__class__)} rule has an invalid severity. Received {severity}; expected one of: {list(LinterSeverity)}"
+            )
         self.severity = severity
 
 
@@ -85,4 +86,4 @@ def _get_decorator(func, rule_group, print_format, severity):
 
 def _create_violation_msg(ex, format_string, *format_args):
     violation_string = format_string.format(*format_args)
-    return '    {} - {}'.format(violation_string, ex)
+    return f'    {violation_string} - {ex}'

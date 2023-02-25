@@ -36,7 +36,7 @@ def check_load_time(runs=3):
 
     results = {TOTAL: []}
     # Time the module loading X times
-    for i in range(0, runs + 1):
+    for i in range(runs + 1):
         lines = cmd('az -h --debug', show_stderr=True).result
         if i == 0:
             # Ignore the first run since it can be longer due to *.pyc file compilation
@@ -50,8 +50,8 @@ def check_load_time(runs=3):
         for line in lines:
             if line.startswith('DEBUG: Loaded module'):
                 matches = re.match(regex, line)
-                mod = matches.group('mod')
-                val = float(matches.group('val')) * 1000
+                mod = matches['mod']
+                val = float(matches['val']) * 1000
                 total_time = total_time + val
                 if mod in results:
                     results[mod].append(val)
@@ -203,7 +203,7 @@ def _benchmark_load_all_commands():
 
     commands = list(az_cli.invocation.commands_loader.command_table.keys())
 
-    commands = [cmd + " --help" for cmd in commands]
+    commands = [f"{cmd} --help" for cmd in commands]
 
     return sorted(commands)
 
@@ -215,7 +215,7 @@ def _benchmark_process_pool_init():
 
 def _benchmark_cmd_timer(raw_command):
     s = timeit.default_timer()
-    py_cmd("azure.cli {}".format(raw_command), is_module=True)
+    py_cmd(f"azure.cli {raw_command}", is_module=True)
     e = timeit.default_timer()
     return round(e - s, 4)
 
@@ -237,7 +237,7 @@ def _benchmark_cmd_staticstic(time_series: list):
     avg_time = sum(time_series) / size
 
     std_deviation = sqrt(
-        sum([(t - avg_time) * (t - avg_time) for t in time_series]) / size
+        sum((t - avg_time) * (t - avg_time) for t in time_series) / size
     )
 
     return {

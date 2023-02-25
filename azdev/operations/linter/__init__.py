@@ -51,8 +51,9 @@ def run_linter(modules=None, rule_types=None, rules=None, ci_exclusions=None,
             min_severity = LinterSeverity.get_linter_severity(min_severity)
         except ValueError:
             valid_choices = linter_severity_choices()
-            raise CLIError("Please specify a valid linter severity. It should be one of: {}"
-                           .format(", ".join(valid_choices)))
+            raise CLIError(
+                f'Please specify a valid linter severity. It should be one of: {", ".join(valid_choices)}'
+            )
 
     # needed to remove helps from azdev
     azdev_helps = helps.copy()
@@ -90,7 +91,7 @@ def run_linter(modules=None, rule_types=None, rules=None, ci_exclusions=None,
         list(selected_modules['ext'].values())
 
     if selected_mod_names:
-        display('Modules: {}\n'.format(', '.join(selected_mod_names)))
+        display(f"Modules: {', '.join(selected_mod_names)}\n")
 
     # collect all rule exclusions
     for path in selected_mod_paths:
@@ -162,7 +163,7 @@ def run_linter(modules=None, rule_types=None, rules=None, ci_exclusions=None,
         run_commands=not rule_types or 'commands' in rule_types,
         run_command_groups=not rule_types or 'command_groups' in rule_types,
         run_help_files_entries=not rule_types or 'help_entries' in rule_types)
-    display(os.linesep + 'Run custom pylint rules.')
+    display(f'{os.linesep}Run custom pylint rules.')
     exit_code += pylint_rules(selected_modules)
     sys.exit(exit_code)
 
@@ -171,14 +172,14 @@ def pylint_rules(selected_modules):
     # TODO: support severity for pylint rules
     from importlib import import_module
     my_env = os.environ.copy()
-    checker_path = import_module('{}'.format(CHECKERS_PATH)).__path__[0]
+    checker_path = import_module(f'{CHECKERS_PATH}').__path__[0]
     my_env['PYTHONPATH'] = checker_path
     checkers = [os.path.splitext(f)[0] for f in os.listdir(checker_path) if
                 os.path.isfile(os.path.join(checker_path, f)) and f != '__init__.py']
     enable = [s.replace('_', '-') for s in checkers]
     pylint_result = run_pylint(selected_modules, env=my_env, checkers=checkers, disable_all=True, enable=enable)
     if pylint_result and not pylint_result.error:
-        display(os.linesep + 'No violations found for custom pylint rules.')
+        display(f'{os.linesep}No violations found for custom pylint rules.')
         display('Linter: PASSED\n')
     if pylint_result and pylint_result.error:
         display(pylint_result.error.output.decode('utf-8'))

@@ -173,7 +173,7 @@ def load_arguments(self, _):
                         "Please check the CLI's profile after running this command.")
 
     for scope in ['cli', 'extension']:
-        with ArgumentsContext(self, '{} generate-docs'.format(scope)) as c:
+        with ArgumentsContext(self, f'{scope} generate-docs') as c:
 
             c.argument('output_dir', help='Directory to place the generated docs in. Defaults to a temporary directory. '
                                           'If the base directory does not exist, it will be created')

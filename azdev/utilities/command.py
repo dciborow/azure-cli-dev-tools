@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 class CommandError(Exception):
 
     def __init__(self, output, exit_code, command):
-        message = "Command `{}` failed with exit code {}:\n{}".format(command, exit_code, output)
+        message = f"Command `{command}` failed with exit code {exit_code}:\n{output}"
         self.exit_code = exit_code
         self.output = output
         self.command = command
@@ -51,7 +51,7 @@ def cmd(command, message=False, show_stderr=True, raise_error=False, **kwargs):
 
     # use default message if custom not provided
     if message is True:
-        message = 'Running: {}\n'.format(command)
+        message = f'Running: {command}\n'
 
     if message:
         display(message)
@@ -84,12 +84,17 @@ def py_cmd(command, message=False, show_stderr=True, raise_error=False, is_modul
     """
     from azdev.utilities import get_env_path
     env_path = get_env_path()
-    python_bin = sys.executable if not env_path else os.path.join(
-        env_path, 'Scripts' if sys.platform == 'win32' else 'bin', 'python')
+    python_bin = (
+        os.path.join(
+            env_path, 'Scripts' if sys.platform == 'win32' else 'bin', 'python'
+        )
+        if env_path
+        else sys.executable
+    )
     if is_module:
-        command = '{} -m {}'.format(python_bin, command)
+        command = f'{python_bin} -m {command}'
     else:
-        command = '{} {}'.format(python_bin, command)
+        command = f'{python_bin} {command}'
     return cmd(command, message, show_stderr, raise_error, **kwargs)
 
 
@@ -104,5 +109,5 @@ def pip_cmd(command, message=False, show_stderr=True, raise_error=True, **kwargs
     :param kwargs: Any kwargs supported by subprocess.Popen
     :returns: CommandResultItem object.
     """
-    command = 'pip {}'.format(command)
+    command = f'pip {command}'
     return py_cmd(command, message, show_stderr, raise_error, **kwargs)

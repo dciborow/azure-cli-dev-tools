@@ -21,12 +21,12 @@ def heading(txt):
     """ Create standard heading to stderr """
     line_len = len(txt) + 4
     display('\n' + '=' * line_len)
-    display('| {} |'.format(txt))
+    display(f'| {txt} |')
     display('=' * line_len + '\n')
 
 
 def subheading(txt):
     """ Create standard heading to stderr """
     line_len = len(txt) + 2
-    display('\n {} '.format(txt))
+    display(f'\n {txt} ')
     display('=' * line_len + '\n')
