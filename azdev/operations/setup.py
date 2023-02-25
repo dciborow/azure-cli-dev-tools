@@ -25,16 +25,16 @@ def _check_path(path, file_name):
     """ Ensures the file_name is provided in the supplied path. """
     path = os.path.abspath(path)
     if not os.path.exists(path):
-        raise CLIError('{} is not a valid path.'.format(path))
+        raise CLIError(f'{path} is not a valid path.')
     _check_repo(path)
     if file_name not in os.listdir(path):
-        raise CLIError("'{}' does not contain the expected file '{}'".format(path, file_name))
+        raise CLIError(f"'{path}' does not contain the expected file '{file_name}'")
     return path
 
 
 def _check_repo(path):
     if not os.path.isdir(os.path.join(path, '.git')):
-        raise CLIError("'{}' is not a valid git repository.".format(path))
+        raise CLIError(f"'{path}' is not a valid git repository.")
 
 
 def _install_extensions(ext_paths):
@@ -48,7 +48,7 @@ def _install_extensions(ext_paths):
 
     # install specified extensions
     for path in ext_paths or []:
-        result = pip_cmd('install -e {}'.format(path), "Adding extension '{}'...".format(path))
+        result = pip_cmd(f'install -e {path}', f"Adding extension '{path}'...")
         if result.error:
             raise result.error  # pylint: disable=raising-bad-type
 
@@ -76,12 +76,12 @@ def _install_cli(cli_path, deps=None):
         whl_list = " ".join(
             [os.path.join(privates_dir, f) for f in os.listdir(privates_dir)]
         )
-        pip_cmd("install {}".format(whl_list), "Installing private whl files...")
+        pip_cmd(f"install {whl_list}", "Installing private whl files...")
 
     # install general requirements
     pip_cmd(
-        "install -r {}".format(os.path.join(cli_path, "requirements.txt")),
-        "Installing `requirements.txt`..."
+        f'install -r {os.path.join(cli_path, "requirements.txt")}',
+        "Installing `requirements.txt`...",
     )
 
     cli_src = os.path.join(cli_path, 'src')
@@ -89,54 +89,54 @@ def _install_cli(cli_path, deps=None):
         # Resolve dependencies from setup.py files.
         # command modules have dependency on azure-cli-core so install this first
         pip_cmd(
-            "install -e {}".format(os.path.join(cli_src, 'azure-cli-telemetry')),
-            "Installing `azure-cli-telemetry`..."
+            f"install -e {os.path.join(cli_src, 'azure-cli-telemetry')}",
+            "Installing `azure-cli-telemetry`...",
         )
         pip_cmd(
-            "install -e {}".format(os.path.join(cli_src, 'azure-cli-core')),
-            "Installing `azure-cli-core`..."
+            f"install -e {os.path.join(cli_src, 'azure-cli-core')}",
+            "Installing `azure-cli-core`...",
         )
 
         # azure cli has dependencies on the above packages so install this one last
         pip_cmd(
-            "install -e {}".format(os.path.join(cli_src, 'azure-cli')),
-            "Installing `azure-cli`..."
+            f"install -e {os.path.join(cli_src, 'azure-cli')}",
+            "Installing `azure-cli`...",
         )
 
         pip_cmd(
-            "install -e {}".format(os.path.join(cli_src, 'azure-cli-testsdk')),
-            "Installing `azure-cli-testsdk`..."
+            f"install -e {os.path.join(cli_src, 'azure-cli-testsdk')}",
+            "Installing `azure-cli-testsdk`...",
         )
     else:
         # First install packages without dependencies,
         # then resolve dependencies from requirements.*.txt file.
         pip_cmd(
-            "install -e {} --no-deps".format(os.path.join(cli_src, 'azure-cli-telemetry')),
-            "Installing `azure-cli-telemetry`..."
+            f"install -e {os.path.join(cli_src, 'azure-cli-telemetry')} --no-deps",
+            "Installing `azure-cli-telemetry`...",
         )
         pip_cmd(
-            "install -e {} --no-deps".format(os.path.join(cli_src, 'azure-cli-core')),
-            "Installing `azure-cli-core`..."
+            f"install -e {os.path.join(cli_src, 'azure-cli-core')} --no-deps",
+            "Installing `azure-cli-core`...",
         )
 
         pip_cmd(
-            "install -e {} --no-deps".format(os.path.join(cli_src, 'azure-cli')),
-            "Installing `azure-cli`..."
+            f"install -e {os.path.join(cli_src, 'azure-cli')} --no-deps",
+            "Installing `azure-cli`...",
         )
 
         # The dependencies of testsdk are not in requirements.txt as this package is not needed by the
         # azure-cli package for running commands.
         # Here we need to install with dependencies for azdev test.
         pip_cmd(
-            "install -e {}".format(os.path.join(cli_src, 'azure-cli-testsdk')),
-            "Installing `azure-cli-testsdk`..."
+            f"install -e {os.path.join(cli_src, 'azure-cli-testsdk')}",
+            "Installing `azure-cli-testsdk`...",
         )
         import platform
         system = platform.system()
-        req_file = 'requirements.py3.{}.txt'.format(system)
+        req_file = f'requirements.py3.{system}.txt'
         pip_cmd(
-            "install -r {}".format(os.path.join(cli_src, 'azure-cli', req_file)),
-            "Installing `{}`...".format(req_file)
+            f"install -r {os.path.join(cli_src, 'azure-cli', req_file)}",
+            f"Installing `{req_file}`...",
         )
 
 
@@ -248,7 +248,7 @@ def _interactive_setup():
             display('\nTIP: you can manage extensions later with the `azdev extension` commands.')
 
         subheading('Summary')
-        display('CLI: {}'.format(cli_path if cli_path else 'PyPI'))
+        display('CLI: {}'.format(cli_path or 'PyPI'))
         display('Extension repos: {}'.format(' '.join(ext_repos)))
         display('Extensions: \n    {}'.format('\n    '.join(exts)))
         if prompt_y_n('\nProceed with installation? '):
@@ -283,7 +283,7 @@ def setup(cli_path=None, ext_repo_path=None, ext=None, deps=None):
                                'this command from a folder upstream of the repo.')
             if cli_path != 'EDGE':
                 cli_path = _check_path(cli_path, CLI_SENTINEL)
-            display('Azure CLI:\n    {}\n'.format(cli_path))
+            display(f'Azure CLI:\n    {cli_path}\n')
         else:
             display('Azure CLI:\n    PyPI\n')
 
@@ -303,8 +303,7 @@ def setup(cli_path=None, ext_repo_path=None, ext=None, deps=None):
         elif ext:
             # add extension(s)
             available_extensions = [x['name'] for x in list_extensions()]
-            not_found = [x for x in ext if x not in available_extensions]
-            if not_found:
+            if not_found := [x for x in ext if x not in available_extensions]:
                 raise CLIError("The following extensions were not found. Ensure you have added "
                                "the repo using `--repo/-r PATH`.\n    {}".format('\n    '.join(not_found)))
             ext_to_install = [x['path'] for x in list_extensions() if x['name'] in ext]
@@ -316,8 +315,8 @@ def setup(cli_path=None, ext_repo_path=None, ext=None, deps=None):
 
     # save data to config files
     config = get_azdev_config()
-    config.set_value('ext', 'repo_paths', dev_sources if dev_sources else '_NONE_')
-    config.set_value('cli', 'repo_path', cli_path if cli_path else '_NONE_')
+    config.set_value('ext', 'repo_paths', dev_sources or '_NONE_')
+    config.set_value('cli', 'repo_path', cli_path or '_NONE_')
 
     # install packages
     subheading('Installing packages')
@@ -336,6 +335,6 @@ def setup(cli_path=None, ext_repo_path=None, ext=None, deps=None):
     end = time.time()
     elapsed_min = int((end - start) / 60)
     elapsed_sec = int(end - start) % 60
-    display('\nElapsed time: {} min {} sec'.format(elapsed_min, elapsed_sec))
+    display(f'\nElapsed time: {elapsed_min} min {elapsed_sec} sec')
 
     subheading('Finished dev setup!')

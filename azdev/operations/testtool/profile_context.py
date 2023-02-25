@@ -24,17 +24,21 @@ class ProfileContext:
 
     def __enter__(self):
         if self.target_profile is None or self.target_profile == self.origin_profile:
-            display('The tests are set to run against current profile "{}"'.format(self.origin_profile))
+            display(
+                f'The tests are set to run against current profile "{self.origin_profile}"'
+            )
         else:
-            result = cmd('az cloud update --profile {}'.format(self.target_profile),
-                         'Switching to target profile "{}"...'.format(self.target_profile))
+            result = cmd(
+                f'az cloud update --profile {self.target_profile}',
+                f'Switching to target profile "{self.target_profile}"...',
+            )
             if result.exit_code != 0:
                 raise CLIError(result.error.output.decode('utf-8'))
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.target_profile is not None and self.target_profile != self.origin_profile:
-            display('Switching back to origin profile "{}"...'.format(self.origin_profile))
-            call('az cloud update --profile {}'.format(self.origin_profile))
+            display(f'Switching back to origin profile "{self.origin_profile}"...')
+            call(f'az cloud update --profile {self.origin_profile}')
 
         if exc_tb:
             display('')

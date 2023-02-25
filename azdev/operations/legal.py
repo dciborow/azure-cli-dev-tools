@@ -32,12 +32,10 @@ def check_license_headers():
 
     cli_path = get_cli_repo_path()
     all_paths = [cli_path]
-    for path in get_ext_repo_paths():
-        all_paths.append(path)
-
+    all_paths.extend(iter(get_ext_repo_paths()))
     files_without_header = []
     for path in all_paths:
-        py_files = pathlib.Path(path).glob('**' + os.path.sep + '*.py')
+        py_files = pathlib.Path(path).glob(f'**{os.path.sep}*.py')
 
         for py_file in py_files:
             py_file = str(py_file)
@@ -49,7 +47,7 @@ def check_license_headers():
                 if ignore_token in py_file:
                     break
             else:
-                with open(str(py_file), 'r', encoding='utf-8') as f:
+                with open(py_file, 'r', encoding='utf-8') as f:
                     file_text = f.read()
 
                     if not file_text:

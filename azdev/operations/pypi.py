@@ -40,14 +40,15 @@ def check_history():
     heading('Verify History')
 
     module_names = sorted([name for name, _ in selected_modules])
-    display('Verifying README and HISTORY files for modules: {}'.format(' '.join(module_names)))
+    display(
+        f"Verifying README and HISTORY files for modules: {' '.join(module_names)}"
+    )
 
     failed_mods = []
     for name, path in selected_modules:
-        errors = _check_readme_render(path)
-        if errors:
+        if errors := _check_readme_render(path):
             failed_mods.append(name)
-            subheading('{} errors'.format(name))
+            subheading(f'{name} errors')
             for error in errors:
                 logger.error('%s\n', error)
     subheading('Results')
@@ -81,7 +82,9 @@ def _check_history_headings(mod_path):
 
         # Check first heading is Release History
         if pub.writer.document.children[0].rawsource != RELEASE_HISTORY_TITLE:
-            errors.append("Expected '{}' as first heading in HISTORY.rst".format(RELEASE_HISTORY_TITLE))
+            errors.append(
+                f"Expected '{RELEASE_HISTORY_TITLE}' as first heading in HISTORY.rst"
+            )
 
         all_versions = [t['names'][0] for t in pub.writer.document.children if t['names']]
         # Check that no headings contain 'unreleased'. We don't require it any more
@@ -90,16 +93,18 @@ def _check_history_headings(mod_path):
 
         # Check that the current package version has a history entry
         if not all_versions:
-            errors.append("Unable to get versions from {}. Check formatting. e.g. there should be a new "
-                          "line after the 'Release History' heading.".format(history_path))
+            errors.append(
+                f"Unable to get versions from {history_path}. Check formatting. e.g. there should be a new line after the 'Release History' heading."
+            )
 
         first_version_history = all_versions[0]
         actual_version = cmd('python setup.py --version', cwd=mod_path)
         # command can output warnings as well, so we just want the last line, which should have the version
         actual_version = actual_version.result.splitlines()[-1].strip()
         if first_version_history != actual_version:
-            errors.append("The topmost version in {} does not match version {} defined in setup.py.".format(
-                history_path, actual_version))
+            errors.append(
+                f"The topmost version in {history_path} does not match version {actual_version} defined in setup.py."
+            )
     return errors
 
 
@@ -142,7 +147,7 @@ def verify_versions():
     if not modules:
         raise CLIError('No modules selected to test.')
 
-    display('MODULES: {}'.format(', '.join([x[0] for x in modules])))
+    display(f"MODULES: {', '.join([x[0] for x in modules])}")
 
     results = {}
 
@@ -150,9 +155,9 @@ def verify_versions():
     temp_dir = tempfile.mkdtemp()
     for mod, mod_path in modules:
         if not mod.startswith(COMMAND_MODULE_PREFIX) and mod != 'azure-cli':
-            mod = '{}{}'.format(COMMAND_MODULE_PREFIX, mod)
+            mod = f'{COMMAND_MODULE_PREFIX}{mod}'
         results[mod] = {}
-        results.update(_compare_module_against_pypi(results, temp_dir, mod, mod_path))
+        results |= _compare_module_against_pypi(results, temp_dir, mod, mod_path)
 
     shutil.rmtree(temp_dir)
     os.chdir(original_cwd)
@@ -181,15 +186,18 @@ def _get_module_versions(results, modules):
 
     for mod, mod_path in modules:
         if not mod.startswith(COMMAND_MODULE_PREFIX) and mod != 'azure-cli':
-            mod = '{}{}'.format(COMMAND_MODULE_PREFIX, mod)
+            mod = f'{COMMAND_MODULE_PREFIX}{mod}'
 
         setup_path = find_files(mod_path, 'setup.py')
         with open(setup_path[0], 'r') as f:
-            local_version = 'Unknown'
-            for line in f.readlines():
-                if line.strip().startswith('VERSION'):
-                    local_version = version_pattern.match(line).group('ver')
-                    break
+            local_version = next(
+                (
+                    version_pattern.match(line)['ver']
+                    for line in f
+                    if line.strip().startswith('VERSION')
+                ),
+                'Unknown',
+            )
             results[mod]['local_version'] = local_version
     return results
 
@@ -210,7 +218,7 @@ def _compare_module_against_pypi(results, root_dir, mod, mod_path):
 
     # download the public PyPI package and extract the version
     logger.info('Checking %s...', mod)
-    result = pip_cmd('download {} --no-deps -d {}'.format(mod, root_dir)).result
+    result = pip_cmd(f'download {mod} --no-deps -d {root_dir}').result
     try:
         result = result.decode('utf-8')
     except AttributeError:
@@ -219,23 +227,25 @@ def _compare_module_against_pypi(results, root_dir, mod, mod_path):
         line = line.strip()
         if line.endswith('.whl') and line.startswith('Saved'):
             downloaded_path = line.replace('Saved ', '').strip()
-            downloaded_version = version_pattern.match(downloaded_path).group(1)
+            downloaded_version = version_pattern.match(downloaded_path)[1]
             break
         if 'No matching distribution found' in line:
             downloaded_path = None
             downloaded_version = 'Unavailable'
             break
     if not downloaded_version:
-        raise CLIError('Unexpected error trying to acquire {}: {}'.format(mod, result))
+        raise CLIError(f'Unexpected error trying to acquire {mod}: {result}')
 
     # build from source and extract the version
     setup_path = os.path.normpath(mod_path.strip())
     os.chdir(setup_path)
-    py_cmd('setup.py bdist_wheel -d {}'.format(build_dir))
+    py_cmd(f'setup.py bdist_wheel -d {build_dir}')
     if len(os.listdir(build_dir)) != 1:
-        raise CLIError('Unexpectedly found multiple build files found in {}.'.format(build_dir))
+        raise CLIError(
+            f'Unexpectedly found multiple build files found in {build_dir}.'
+        )
     build_path = os.path.join(build_dir, os.listdir(build_dir)[0])
-    build_version = version_pattern.match(build_path).group(1)
+    build_version = version_pattern.match(build_path)[1]
 
     results[mod].update({
         'local_version': build_version,
@@ -262,16 +272,18 @@ def _compare_module_against_pypi(results, root_dir, mod, mod_path):
     # clean up empty strings
     errors = [e for e in errors if e]
     if errors:
-        subheading('Differences found in {}'.format(mod))
+        subheading(f'Differences found in {mod}')
         for error in errors:
             logger.warning(error)
-    results[mod]['status'] = 'OK' if not errors else 'BUMP'
+    results[mod]['status'] = 'BUMP' if errors else 'OK'
 
     # special case: to make a release, these MUST be bumped, even if it wouldn't otherwise be necessary
-    if mod in ['azure-cli', 'azure-cli-core']:
-        if results[mod]['status'] == 'OK':
-            logger.warning('%s version must be bumped to support release!', mod)
-            results[mod]['status'] = 'BUMP'
+    if (
+        mod in ['azure-cli', 'azure-cli-core']
+        and results[mod]['status'] == 'OK'
+    ):
+        logger.warning('%s version must be bumped to support release!', mod)
+        results[mod]['status'] = 'BUMP'
 
     return results
 
@@ -281,8 +293,12 @@ def _diff_files(filename, dir1, dir2):
     file1 = os.path.join(dir1, filename)
     file2 = os.path.join(dir2, filename)
     errors = []
-    with open(file1, 'r') as f1, open(file2, 'r') as f2:
-        errors.append(os.linesep.join(diff for diff in difflib.context_diff(f1.readlines(), f2.readlines())))
+    with (open(file1, 'r') as f1, open(file2, 'r') as f2):
+        errors.append(
+            os.linesep.join(
+                iter(difflib.context_diff(f1.readlines(), f2.readlines()))
+            )
+        )
     return errors
 
 
@@ -301,9 +317,9 @@ def _compare_folders(dir1, dir2):
         # allow some special cases
         if len(dirs_cmp.left_only) == 1 and '__init__.py' in dirs_cmp.left_only:
             pass
-        elif len(dirs_cmp.right_only) == 1 and dirs_cmp.right_only[0].endswith('.whl'):
-            pass
-        else:
+        elif len(dirs_cmp.right_only) != 1 or not dirs_cmp.right_only[
+            0
+        ].endswith('.whl'):
             if dirs_cmp.left_only:
                 logger.debug('LO: %s', dirs_cmp.left_only)
             if dirs_cmp.right_only:
@@ -311,7 +327,7 @@ def _compare_folders(dir1, dir2):
             if dirs_cmp.funny_files:
                 logger.debug('FF: %s', dirs_cmp.funny_files)
             errors.append('Different files in directory structure.')
-    errors = errors + _compare_common_files(dirs_cmp.common_files, dir1, dir2)
+    errors += _compare_common_files(dirs_cmp.common_files, dir1, dir2)
     for common_dir in dirs_cmp.common_dirs:
         new_dir1 = os.path.join(dir1, common_dir)
         new_dir2 = os.path.join(dir2, common_dir)
@@ -326,7 +342,7 @@ def _compare_folders(dir1, dir2):
 def _extract_dependencies(path):
     dependencies = {}
     with open(path, 'r') as f:
-        for line in f.readlines():
+        for line in f:
             if line.startswith('Requires-Dist:'):
                 line = line.replace(' ;', '').replace(';', '')
                 comps = line.split(' ', 2)
@@ -335,7 +351,7 @@ def _extract_dependencies(path):
                 elif len(comps) > 2:
                     dependencies[comps[1]] = comps[2]
                 else:
-                    raise CLIError('Unrecognized format in METADATA: {}'.format(line))
+                    raise CLIError(f'Unrecognized format in METADATA: {line}')
     return dependencies
 
 
@@ -348,7 +364,7 @@ def _compare_dependencies(dir1, dir2):
     for key, val in deps1.items():
         if key in deps2:
             if deps2[key] != val:
-                mismatch[key] = '{} != {}'.format(val, deps2[key])
+                mismatch[key] = f'{val} != {deps2[key]}'
             deps2.pop(key)
             matched.append(key)
     for key in matched:
@@ -356,13 +372,13 @@ def _compare_dependencies(dir1, dir2):
     for key, val in deps2.items():
         if key in deps1:
             if deps1[key] != val:
-                mismatch[key] = '{} != {}'.format(val, deps1[key])
+                mismatch[key] = f'{val} != {deps1[key]}'
             deps1.pop(key)
     if deps1:
-        errors.append('New dependencies: {}'.format(deps1))
+        errors.append(f'New dependencies: {deps1}')
     if deps2:
-        errors.append('Removed dependencies: {}'.format(deps2))
+        errors.append(f'Removed dependencies: {deps2}')
     if mismatch:
-        errors.append('Changed dependencies: {}'.format(mismatch))
+        errors.append(f'Changed dependencies: {mismatch}')
     return errors
 # endregion

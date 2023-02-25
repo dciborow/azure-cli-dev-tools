@@ -41,10 +41,10 @@ def add_extension(extensions):
                 extensions.remove(long_name)
         # raise error if any extension wasn't found
         if extensions:
-            raise CLIError('extension(s) not found: {}'.format(' '.join(extensions)))
+            raise CLIError(f"extension(s) not found: {' '.join(extensions)}")
 
     for path in paths_to_add:
-        result = pip_cmd('install -e {}'.format(path), "Adding extension '{}'...".format(path))
+        result = pip_cmd(f'install -e {path}', f"Adding extension '{path}'...")
         if result.error:
             raise result.error  # pylint: disable=raising-bad-type
 
@@ -68,18 +68,18 @@ def remove_extension(extensions):
                 extensions.remove(long_name)
         # raise error if any extension not installed
         if extensions:
-            raise CLIError('extension(s) not installed: {}'.format(' '.join(extensions)))
+            raise CLIError(f"extension(s) not installed: {' '.join(extensions)}")
 
     # removes any links that may have been added to site-packages.
     for ext in names_to_remove:
-        pip_cmd('uninstall {} -y'.format(ext))
+        pip_cmd(f'uninstall {ext} -y')
 
     for path in paths_to_remove:
         for d in os.listdir(path):
             # delete the egg-info and dist-info folders to make the extension invisible to the CLI and azdev
             if d.endswith('egg-info') or d.endswith('dist-info'):
                 path_to_remove = os.path.join(path, d)
-                display("Removing '{}'...".format(path_to_remove))
+                display(f"Removing '{path_to_remove}'...")
                 shutil.rmtree(path_to_remove)
 
 
@@ -118,7 +118,7 @@ def list_extensions():
     for ext_path in find_files(dev_sources, 'setup.py'):
         # skip non-extension packages that may be in the extension folder (for example, from a virtual environment)
         try:
-            glob_pattern = os.path.join(os.path.split(ext_path)[0], '{}*'.format(EXTENSION_PREFIX))
+            glob_pattern = os.path.join(os.path.split(ext_path)[0], f'{EXTENSION_PREFIX}*')
             _ = glob(glob_pattern)[0]
         except IndexError:
             continue
@@ -262,14 +262,14 @@ def build_extensions(extensions, dist_dir='dist'):
             extensions.remove(long_name)
     # raise error if any extension wasn't found
     if extensions:
-        raise CLIError('extension(s) not found: {}'.format(' '.join(extensions)))
+        raise CLIError(f"extension(s) not found: {' '.join(extensions)}")
 
     original_cwd = os.getcwd()
     dist_dir = os.path.join(original_cwd, dist_dir)
     for path in paths_to_build:
         os.chdir(path)
-        command = 'setup.py bdist_wheel -b bdist -d {}'.format(dist_dir)
-        result = py_cmd(command, "Building extension '{}'...".format(path), is_module=False)
+        command = f'setup.py bdist_wheel -b bdist -d {dist_dir}'
+        result = py_cmd(command, f"Building extension '{path}'...", is_module=False)
         if result.error:
             raise result.error  # pylint: disable=raising-bad-type
     os.chdir(original_cwd)
@@ -302,13 +302,16 @@ def publish_extensions(extensions, storage_account, storage_account_key, storage
         exists = client.exists(container_name=storage_container, blob_name=whl_file)
 
         # check if extension already exists unless user opted not to
-        if not yes:
-            if exists:
-                if not prompt_y_n(
-                        "{} already exists. You may need to bump the extension version. Replace?".format(whl_file),
-                        default='n'):
-                    logger.warning("Skipping '%s'...", whl_file)
-                    continue
+        if (
+            not yes
+            and exists
+            and not prompt_y_n(
+                f"{whl_file} already exists. You may need to bump the extension version. Replace?",
+                default='n',
+            )
+        ):
+            logger.warning("Skipping '%s'...", whl_file)
+            continue
         # upload the WHL file
         client.create_blob_from_path(container_name=storage_container, blob_name=whl_file,
                                      file_path=os.path.abspath(whl_path))

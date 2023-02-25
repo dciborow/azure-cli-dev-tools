@@ -27,10 +27,9 @@ def filter_by_git_diff(selected_modules, git_source, git_target, git_repo):
     for key in selected_modules:
         for name, path in selected_modules[key].items():
             path = path.lower()
-            if path.startswith(repo_path):
-                if name in mods_changed:
-                    # has changed, so do not filter out
-                    continue
+            if path.startswith(repo_path) and name in mods_changed:
+                # has changed, so do not filter out
+                continue
             # if not in the repo or has not changed, filter out
             to_remove[key].append(name)
 
@@ -79,10 +78,7 @@ def diff_branches(repo, target, source):
         except gitdb.exc.BadName:
             raise CLIError('usage error, invalid branch: {}'.format(branch))
 
-    if source:
-        source_commit = get_commit(source)
-    else:
-        source_commit = git_repo.head.commit
+    source_commit = get_commit(source) if source else git_repo.head.commit
     target_commit = get_commit(target)
 
     logger.info('Filtering down to modules which have changed based on:')

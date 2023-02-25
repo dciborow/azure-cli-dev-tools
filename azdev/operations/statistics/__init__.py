@@ -54,7 +54,7 @@ def list_command_table(modules=None, git_source=None, git_target=None, git_repo=
     #                      list(selected_modules['ext'].values())
 
     if selected_mod_names:
-        display('Modules: {}\n'.format(', '.join(selected_mod_names)))
+        display(f"Modules: {', '.join(selected_mod_names)}\n")
 
     start = time.time()
     display('Initializing with command table and help files...')
@@ -84,8 +84,9 @@ def list_command_table(modules=None, git_source=None, git_target=None, git_repo=
             "source": _get_command_source(command_name, command)
         }
         module_loader = command_loader.cmd_to_loader_map[command_name]
-        codegen_info = _command_codegen_info(command_name, command, module_loader)
-        if codegen_info:
+        if codegen_info := _command_codegen_info(
+            command_name, command, module_loader
+        ):
             command_info['codegen_version'] = codegen_info['version']
             command_info['codegen_type'] = codegen_info['type']
             if codegen_info['version'] == "v2":
@@ -106,8 +107,7 @@ def list_command_table(modules=None, git_source=None, git_target=None, git_repo=
             f"CodeGen V2 Commands: {codegen_v2_command_count}\t "
             f"CodeGen V1 Commands: {codegen_v1_command_count}")
 
-    commands = sorted(commands, key=lambda a: a['name'])
-    return commands
+    return sorted(commands, key=lambda a: a['name'])
 
 
 def diff_command_tables(table_path, diff_table_path, statistics_only=False):
@@ -117,10 +117,7 @@ def diff_command_tables(table_path, diff_table_path, statistics_only=False):
     with open(diff_table_path, 'r') as f:
         new_commands = json.load(f)
 
-    command_table = {}
-    for command in commands:
-        command_table[command['name']] = command
-
+    command_table = {command['name']: command for command in commands}
     added_commands = []
     migrated_commands = []
     for command in new_commands:
@@ -183,7 +180,7 @@ def _get_command_source(command_name, command):
             "isExtension": True
         }
     if command.command_source is None:
-        raise ValueError('Command: `%s`, has no command source.' % command_name)
+        raise ValueError(f'Command: `{command_name}`, has no command source.')
     # command is from module
     return {
         "module": command.command_source,

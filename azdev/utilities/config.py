@@ -23,9 +23,11 @@ def get_azdev_config_dir():
     env_name = None
     _, env_name = os.path.splitdrive(get_env_path())
     azdev_dir = os.getenv('AZDEV_CONFIG_DIR', None) or os.path.expanduser(os.path.join('~', '.azdev'))
-    if not env_name:
-        return azdev_dir
-    return os.path.join(azdev_dir, 'env_config') + env_name
+    return (
+        os.path.join(azdev_dir, 'env_config') + env_name
+        if env_name
+        else azdev_dir
+    )
 
 
 def get_azure_config_dir():

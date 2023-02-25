@@ -62,8 +62,9 @@ def create_extension(ext_name='test', repo_name='azure-cli-extensions',
     repo_path = next((x for x in repo_paths if x.endswith(repo_name)), None)
 
     if not repo_path:
-        raise CLIError('Unable to find `{}` repo. Have you cloned it and added '
-                       'with `azdev extension repo add`?'.format(repo_name))
+        raise CLIError(
+            f'Unable to find `{repo_name}` repo. Have you cloned it and added with `azdev extension repo add`?'
+        )
 
     _create_package(EXTENSION_PREFIX, os.path.join(repo_path, 'src'), True, ext_name, display_name,
                     display_name_plural, required_sdk, client_name, operation_name, sdk_property, not_preview,
@@ -74,16 +75,16 @@ def create_extension(ext_name='test', repo_name='azure-cli-extensions',
 
 
 def _display_success_message(package_name, group_name):
-    heading('Creation of {} successful!'.format(package_name))
+    heading(f'Creation of {package_name} successful!')
     display('Getting started:')
     display('\n  To see your new commands:')
-    display('    `az {} -h`'.format(group_name))
+    display(f'    `az {group_name} -h`')
     display('\n  To discover and run your tests:')
-    display('    `azdev test {} --discover`'.format(group_name))
+    display(f'    `azdev test {group_name} --discover`')
     display('\n  To identify code style issues (there will be some left over from code generation):')
-    display('    `azdev style {}`'.format(group_name))
+    display(f'    `azdev style {group_name}`')
     display('\n  To identify CLI-specific linter violations:')
-    display('    `azdev linter {}`'.format(group_name))
+    display(f'    `azdev linter {group_name}`')
 
 
 def _download_vendored_sdk(required_sdk, path):
@@ -96,22 +97,22 @@ def _download_vendored_sdk(required_sdk, path):
     # download and extract the required SDK to the vendored_sdks folder
     downloaded_path = None
     if required_sdk:
-        display('Downloading {}...'.format(required_sdk))
+        display(f'Downloading {required_sdk}...')
         vendored_sdks_path = path
-        result = pip_cmd('download {} --no-deps -d {}'.format(required_sdk, temp_path)).result
+        result = pip_cmd(f'download {required_sdk} --no-deps -d {temp_path}').result
         try:
             result = result.decode('utf-8')
         except AttributeError:
             pass
         for line in result.splitlines():
             try:
-                downloaded_path = path_regex.match(line).group('path')
+                downloaded_path = path_regex.match(line)['path']
             except AttributeError:
                 continue
             break
         if not downloaded_path:
             display('Unable to download')
-            raise CLIError('Unable to download: {}'.format(required_sdk))
+            raise CLIError(f'Unable to download: {required_sdk}')
 
         # extract the WHL file
         with zipfile.ZipFile(str(downloaded_path), 'r') as z:
@@ -145,17 +146,21 @@ def _add_to_codeowners(repo_path, prefix, name, github_alias):
             github_alias = prompt('Alias: ')
 
     # accept a raw alias or @alias
-    github_alias = '@{}'.format(github_alias) if not github_alias.startswith('@') else github_alias
+    github_alias = (
+        github_alias if github_alias.startswith('@') else f'@{github_alias}'
+    )
     try:
         codeowners = find_files(repo_path, 'CODEOWNERS')[0]
     except IndexError:
         raise CLIError('unexpected error: unable to find CODEOWNERS file.')
 
     if prefix == EXTENSION_PREFIX:
-        new_line = '/src/{}{}/ {}'.format(prefix, name, github_alias)
+        new_line = f'/src/{prefix}{name}/ {github_alias}'
     else:
         # ensure Linux-style separators when run on Windows
-        new_line = '/{} {}'.format(os.path.join('', _MODULE_ROOT_PATH, name, ''), github_alias).replace('\\', '/')
+        new_line = f"/{os.path.join('', _MODULE_ROOT_PATH, name, '')} {github_alias}".replace(
+            '\\', '/'
+        )
 
     with open(codeowners, 'a') as f:
         f.write(new_line)
@@ -189,32 +194,34 @@ def _create_package(prefix, repo_path, is_ext, name='test', display_name=None, d
     if name.startswith(prefix):
         name = name[len(prefix):]
 
-    heading('Create CLI {}: {}{}'.format('Extension' if is_ext else 'Module', prefix, name))
+    heading(f"Create CLI {'Extension' if is_ext else 'Module'}: {prefix}{name}")
 
     # package_name is how the item should show up in `pip list`
-    package_name = '{}{}'.format(prefix, name.replace('_', '-')) if not is_ext else name
+    package_name = name if is_ext else f"{prefix}{name.replace('_', '-')}"
     display_name = display_name or name.capitalize()
 
     kwargs = {
         'name': name,
-        'mod_path': '{}{}'.format(prefix, name) if is_ext else 'azure.cli.command_modules.{}'.format(name),
+        'mod_path': f'{prefix}{name}'
+        if is_ext
+        else f'azure.cli.command_modules.{name}',
         'display_name': display_name,
-        'display_name_plural': display_name_plural or '{}s'.format(display_name),
-        'loader_name': '{}CommandsLoader'.format(name.capitalize()),
+        'display_name_plural': display_name_plural or f'{display_name}s',
+        'loader_name': f'{name.capitalize()}CommandsLoader',
         'pkg_name': package_name,
-        'ext_long_name': '{}{}'.format(prefix, name) if is_ext else None,
+        'ext_long_name': f'{prefix}{name}' if is_ext else None,
         'is_ext': is_ext,
-        'is_preview': not not_preview
+        'is_preview': not not_preview,
     }
 
     new_package_path = os.path.join(repo_path, package_name)
-    if os.path.isdir(new_package_path):
-        if not prompt_y_n(
-                "{} '{}' already exists. Overwrite?".format('Extension' if is_ext else 'Module', package_name),
-                default='n'):
-            raise CLIError('aborted by user')
+    if os.path.isdir(new_package_path) and not prompt_y_n(
+        f"{'Extension' if is_ext else 'Module'} '{package_name}' already exists. Overwrite?",
+        default='n',
+    ):
+        raise CLIError('aborted by user')
 
-    ext_folder = '{}{}'.format(prefix, name) if is_ext else None
+    ext_folder = f'{prefix}{name}' if is_ext else None
 
     # create folder tree
     if is_ext:
@@ -236,27 +243,27 @@ def _create_package(prefix, repo_path, is_ext, name='test', display_name=None, d
             _copy_vendored_sdk(local_sdk, os.path.join(new_package_path, ext_folder, 'vendored_sdks'))
         sdk_path = None
         if any([local_sdk, required_sdk]):
-            sdk_path = '{}{}.vendored_sdks'.format(prefix, package_name)
-        kwargs.update({
+            sdk_path = f'{prefix}{package_name}.vendored_sdks'
+        kwargs |= {
             'sdk_path': sdk_path,
             'client_name': client_name,
             'operation_name': operation_name,
-            'sdk_property': sdk_property or '{}_name'.format(name)
-        })
+            'sdk_property': sdk_property or f'{name}_name',
+        }
     else:
         if required_sdk:
             version_regex = r'(?P<name>[a-zA-Z-]+)(?P<op>[~<>=]*)(?P<version>[\d.]*)'
             version_comps = re.compile(version_regex).match(required_sdk)
             sdk_kwargs = version_comps.groupdict()
-            kwargs.update({
+            kwargs |= {
                 'sdk_path': sdk_kwargs['name'].replace('-', '.'),
                 'client_name': client_name,
                 'operation_name': operation_name,
-            })
-            dependencies.append("'{}'".format(required_sdk))
+            }
+            dependencies.append(f"'{required_sdk}'")
         else:
             dependencies.append('# TODO: azure-mgmt-<NAME>==<VERSION>')
-        kwargs.update({'sdk_property': sdk_property or '{}_name'.format(name)})
+        kwargs['sdk_property'] = sdk_property or f'{name}_name'
 
     kwargs['dependencies'] = dependencies
 
@@ -271,7 +278,7 @@ def _create_package(prefix, repo_path, is_ext, name='test', display_name=None, d
         ]
         _generate_files(env, kwargs, root_files, dest_path)
 
-    dest_path = dest_path if not is_ext else os.path.join(dest_path, ext_folder)
+    dest_path = os.path.join(dest_path, ext_folder) if is_ext else dest_path
     module_files = [
         {'name': '__init__.py', 'template': 'module__init__.py'},
         '_client_factory.py',
@@ -292,11 +299,16 @@ def _create_package(prefix, repo_path, is_ext, name='test', display_name=None, d
     dest_path = os.path.join(dest_path, 'latest')
     test_files = [
         blank_init,
-        {'name': 'test_{}_scenario.py'.format(name), 'template': 'test_service_scenario.py'}
+        {
+            'name': f'test_{name}_scenario.py',
+            'template': 'test_service_scenario.py',
+        },
     ]
     _generate_files(env, kwargs, test_files, dest_path)
 
     if is_ext:
-        result = pip_cmd('install -e {}'.format(new_package_path), "Installing `{}{}`...".format(prefix, name))
+        result = pip_cmd(
+            f'install -e {new_package_path}', f"Installing `{prefix}{name}`..."
+        )
         if result.error:
             raise result.error  # pylint: disable=raising-bad-type

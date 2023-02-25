@@ -21,11 +21,9 @@ def extract_module_name(path):
     _EXT_NAME_REGEX = re.compile(r'.*(?P<name>azext_[^/\\]+).*')
 
     for expression in [_MOD_NAME_REGEX, _CORE_NAME_REGEX, _EXT_NAME_REGEX]:
-        match = re.search(expression, path)
-        if not match:
-            continue
-        return match.groupdict().get('name')
-    raise CLIError('unexpected error: unable to extract name from path: {}'.format(path))
+        if match := re.search(expression, path):
+            return match.groupdict().get('name')
+    raise CLIError(f'unexpected error: unable to extract name from path: {path}')
 
 
 def get_env_path():
@@ -83,10 +81,14 @@ def find_file(file_name):
 
     :returns: Path (str) to file or None.
     """
-    for path, _, files in os.walk(os.getcwd()):
-        if file_name in files:
-            return path
-    return None
+    return next(
+        (
+            path
+            for path, _, files in os.walk(os.getcwd())
+            if file_name in files
+        ),
+        None,
+    )
 
 
 def find_files(root_paths, file_pattern):
@@ -110,9 +112,7 @@ def make_dirs(path):
     try:
         os.makedirs(os.path.expanduser(path))
     except OSError as exc:  # Python <= 2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
+        if exc.errno != errno.EEXIST or not os.path.isdir(path):
             raise
 
 

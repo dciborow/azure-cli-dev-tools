@@ -26,8 +26,9 @@ def _get_extension_modname(ext_dir):
     pos_mods = [n for n in os.listdir(ext_dir)
                 if n.startswith(EXTENSION_PREFIX) and os.path.isdir(os.path.join(ext_dir, n))]
     if len(pos_mods) != 1:
-        raise AssertionError("Expected 1 module to load starting with "
-                             "'{}': got {}".format(EXTENSION_PREFIX, pos_mods))
+        raise AssertionError(
+            f"Expected 1 module to load starting with '{EXTENSION_PREFIX}': got {pos_mods}"
+        )
     return pos_mods[0]
 
 
@@ -50,9 +51,8 @@ def get_ext_metadata(ext_dir, ext_file, ext_name):
         zip_ref.extractall(ext_dir)
     metadata = {}
     dist_info_dirs = [f for f in os.listdir(ext_dir) if f.endswith('.dist-info')]
-    azext_metadata = _get_azext_metadata(ext_dir)
-    if azext_metadata:
-        metadata.update(azext_metadata)
+    if azext_metadata := _get_azext_metadata(ext_dir):
+        metadata |= azext_metadata
     for dist_info_dirname in dist_info_dirs:
         parsed_dist_info_dir = WHEEL_INFO_RE(dist_info_dirname)
         if parsed_dist_info_dir and parsed_dist_info_dir.groupdict().get('name') == ext_name.replace('-', '_'):
@@ -71,9 +71,9 @@ def get_whl_from_url(url, filename, tmp_dir, whl_cache=None):
     import requests
     r = requests.get(url, stream=True)
     try:
-        assert r.status_code == 200, "Request to {} failed with {}".format(url, r.status_code)
+        assert r.status_code == 200, f"Request to {url} failed with {r.status_code}"
     except AssertionError:
-        raise CLIError("unable to download (status code {}): {}".format(r.status_code, url))
+        raise CLIError(f"unable to download (status code {r.status_code}): {url}")
     ext_file = os.path.join(tmp_dir, filename)
     with open(ext_file, 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):

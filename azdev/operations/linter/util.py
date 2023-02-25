@@ -92,7 +92,7 @@ def _get_command_source(command_name, command_table):
     if isinstance(command.command_source, ExtensionCommandSource):
         return command.command_source.extension_name, True
     if command.command_source is None:
-        raise LinterError('Command: `%s`, has no command source.' % command_name)
+        raise LinterError(f'Command: `{command_name}`, has no command source.')
     # command is from module
     return command.command_source, False
 

@@ -32,10 +32,9 @@ env_folders = [
 
 
 def contains_header(text):
-    for header in [PY_LICENSE_HEADER, PY_LICENSE_HEADER_ALT]:
-        if header in text:
-            return True
-    return False
+    return any(
+        header in text for header in [PY_LICENSE_HEADER, PY_LICENSE_HEADER_ALT]
+    )
 
 
 def get_files_without_header():
@@ -56,12 +55,13 @@ def get_files_without_header():
     return files_without_header
 
 
-files_without_header = [file_path for file_path, file_contents in get_files_without_header()]
-
-if files_without_header:
+if files_without_header := [
+    file_path for file_path, file_contents in get_files_without_header()
+]:
     print("Error: The following files don't have the required license headers:", file=sys.stderr)
     print('\n'.join(files_without_header), file=sys.stderr)
-    print("Error: {} file(s) found without license headers.".format(len(files_without_header)), file=sys.stderr)
+    print(
+        f"Error: {len(files_without_header)} file(s) found without license headers.",
+        file=sys.stderr,
+    )
     sys.exit(1)
-else:
-    pass

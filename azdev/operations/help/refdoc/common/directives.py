@@ -113,16 +113,15 @@ class AbstractHelpGenDirective(Directive):
             is_command = isinstance(help_file, CliCommandHelpFile)
 
             # it is top level group az if command is empty
-            yield '.. cli{}:: {}'.format('command' if is_command else 'group',
-                                         help_file.command if help_file.command else 'az')
+            yield f".. cli{'command' if is_command else 'group'}:: {help_file.command or 'az'}"
             yield ''
-            yield '{}:summary: {}'.format(self._INDENT, help_file.short_summary)
-            yield '{}:description: {}'.format(self._INDENT, help_file.long_summary)
+            yield f'{self._INDENT}:summary: {help_file.short_summary}'
+            yield f'{self._INDENT}:description: {help_file.long_summary}'
             if help_file.deprecate_info:
-                yield '{}:deprecated: {}'.format(self._INDENT,
-                                                 help_file.deprecate_info._get_message(help_file.deprecate_info))  # pylint: disable=protected-access
-            doc_source_content = self._get_doc_source_content(doc_source_map, help_file)
-            if doc_source_content:
+                yield f'{self._INDENT}:deprecated: {help_file.deprecate_info._get_message(help_file.deprecate_info)}'
+            if doc_source_content := self._get_doc_source_content(
+                doc_source_map, help_file
+            ):
                 yield doc_source_content
             yield ''
 
@@ -131,23 +130,20 @@ class AbstractHelpGenDirective(Directive):
                     [p.group_name for p in help_file.parameters if p.group_name])
 
                 for arg in sorted(help_file.parameters, key=lambda p: group_registry.get_group_priority(p.group_name) + str(not p.required) + p.name):  # pylint: disable=line-too-long, cell-var-from-loop
-                    yield '{}.. cliarg:: {}'.format(self._INDENT, arg.name)
+                    yield f'{self._INDENT}.. cliarg:: {arg.name}'
                     yield ''
-                    yield '{}:required: {}'.format(self._DOUBLE_INDENT, arg.required)
+                    yield f'{self._DOUBLE_INDENT}:required: {arg.required}'
                     if arg.deprecate_info:
-                        yield '{}:deprecated: {}'.format(self._DOUBLE_INDENT,
-                                                         arg.deprecate_info._get_message(  # pylint: disable=protected-access
-                                                             arg.deprecate_info))
+                        yield f'{self._DOUBLE_INDENT}:deprecated: {arg.deprecate_info._get_message(arg.deprecate_info)}'
                     short_summary = arg.short_summary or ''
                     possible_values_index = short_summary.find(' Possible values include')
                     short_summary_end_idx = possible_values_index if possible_values_index >= 0 else len(short_summary)
-                    short_summary = short_summary[0:short_summary_end_idx]
+                    short_summary = short_summary[:short_summary_end_idx]
                     short_summary = short_summary.strip()
-                    yield '{}:summary: {}'.format(self._DOUBLE_INDENT, short_summary)
-                    yield '{}:description: {}'.format(self._DOUBLE_INDENT, arg.long_summary)
+                    yield f'{self._DOUBLE_INDENT}:summary: {short_summary}'
+                    yield f'{self._DOUBLE_INDENT}:description: {arg.long_summary}'
                     if arg.choices:
-                        yield '{}:values: {}'.format(self._DOUBLE_INDENT,
-                                                     ', '.join(sorted([str(x) for x in arg.choices])))
+                        yield f"{self._DOUBLE_INDENT}:values: {', '.join(sorted([str(x) for x in arg.choices]))}"
                     if arg.default and arg.default != argparse.SUPPRESS:
                         try:
                             if arg.default.startswith(_USER_HOME):
@@ -158,14 +154,14 @@ class AbstractHelpGenDirective(Directive):
                             arg.default = arg.default.replace("\\", "\\\\")
                         except Exception:  # pylint: disable=broad-except
                             pass
-                        yield '{}:default: {}'.format(self._DOUBLE_INDENT, arg.default)
+                        yield f'{self._DOUBLE_INDENT}:default: {arg.default}'
                     if arg.value_sources:
-                        yield '{}:source: {}'.format(self._DOUBLE_INDENT, ', '.join(self._get_param_value_sources(arg)))
+                        yield f"{self._DOUBLE_INDENT}:source: {', '.join(self._get_param_value_sources(arg))}"
                     yield ''
             yield ''
             if help_file.examples:
                 for e in help_file.examples:
-                    yield '{}.. cliexample:: {}'.format(self._INDENT, e.short_summary)
+                    yield f'{self._INDENT}.. cliexample:: {e.short_summary}'
                     yield ''
                     yield self._DOUBLE_INDENT + e.command.replace("\\", "\\\\")
                     yield ''
