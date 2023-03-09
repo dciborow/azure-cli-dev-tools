@@ -57,9 +57,9 @@ def auto_format(modules=None, git_source=None, git_target=None, git_repo=None):
     ext_names = list(selected_modules['ext'].keys())
 
     if mod_names:
-        display('Modules: {}\n'.format(', '.join(mod_names)))
+        display(f"Modules: {', '.join(mod_names)}\n")
     if ext_names:
-        display('Extensions: {}\n'.format(', '.join(ext_names)))
+        display(f"Extensions: {', '.join(ext_names)}\n")
 
     exit_code_sum = 0
     black_result = _run_black(selected_modules)
