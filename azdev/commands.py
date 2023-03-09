@@ -24,6 +24,9 @@ def load_command_table(self, _):
     with CommandGroup(self, '', operation_group('style')) as g:
         g.command('style', 'check_style')
 
+    with CommandGroup(self, '', operation_group('format')) as g:
+        g.command('format', 'auto_format')
+
     with CommandGroup(self, '', operation_group('linter')) as g:
         g.command('linter', 'run_linter')
 
