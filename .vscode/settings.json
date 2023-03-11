@@ -14,8 +14,12 @@
     "python.formatting.provider": "black",
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": [
+        "azdev/operations/tests",
+        "azdev/utilities/tests",
+    ],
     "pylint.args": [
-        "--rcfile=pyproject.toml"
+        "--rcfile=.pylintrc"
     ],
     "pylint.path": [
         "/usr/local/py-utils/bin/pylint"
